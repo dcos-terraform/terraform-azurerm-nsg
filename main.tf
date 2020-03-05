@@ -94,6 +94,18 @@ resource "azurerm_network_security_group" "masters" {
   }
 
   security_rule {
+    name                       = "grpcRule"
+    priority                   = 112
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "${var.adminrouter_grpc_proxy_port}"
+    destination_address_prefix = "*"
+    source_address_prefixes    = ["${var.admin_ips}"]
+  }
+
+  security_rule {
     name                       = "8080Rule"
     priority                   = 150
     direction                  = "Inbound"
