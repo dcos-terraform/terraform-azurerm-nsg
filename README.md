@@ -32,6 +32,7 @@ module "dcos-security-groups" {
 | num\_public\_agents | Specify the amount of public agents. These agents will host marathon-lb and edgelb | string | n/a | yes |
 | resource\_group\_name | Name of the azure resource group | string | n/a | yes |
 | subnet\_range | Private IP space to be used in CIDR format | string | n/a | yes |
+| adminrouter\_grpc\_proxy\_port |  | string | `"12379"` | no |
 | hostname\_format | Format the hostname inputs are index+1, region, cluster_name | string | `"nsg-%[1]d-%[2]s"` | no |
 | name\_prefix | Name Prefix | string | `""` | no |
 | public\_agents\_additional\_ports | List of additional ports allowed for public access on public agents (80 and 443 open by default) | list | `<list>` | no |
