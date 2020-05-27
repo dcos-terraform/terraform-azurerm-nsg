@@ -29,7 +29,6 @@ variable "tags" {
 variable "admin_ips" {
   description = "List of CIDR admin IPs"
   type        = list(string)
-  default     = ["109.86.80.213/32"]
 }
 
 variable "public_agents_ips" {
