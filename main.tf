@@ -21,17 +21,18 @@
  * ```
  */
 
-provider "azurerm" {}
+provider "azurerm" {
+}
 
 locals {
-  public_agents_additional_ports = "${concat(list("80","443"),var.public_agents_additional_ports)}"
+  public_agents_additional_ports = concat(["80", "443"], var.public_agents_additional_ports)
 }
 
 resource "azurerm_network_security_group" "masters" {
-  count               = "${var.num_masters == 0 ? 0 : 1}"
+  count               = var.num_masters == 0 ? 0 : 1
   name                = "dcos-${var.cluster_name}-masters"
-  location            = "${var.location}"
-  resource_group_name = "${var.resource_group_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "sshRule"
@@ -53,8 +54,8 @@ resource "azurerm_network_security_group" "masters" {
     protocol                     = "Tcp"
     source_port_range            = "*"
     destination_port_range       = "*"
-    source_address_prefixes      = ["${var.subnet_range}"]
-    destination_address_prefixes = ["${var.subnet_range}"]
+    source_address_prefixes      = [var.subnet_range]
+    destination_address_prefixes = [var.subnet_range]
   }
 
   security_rule {
@@ -78,7 +79,7 @@ resource "azurerm_network_security_group" "masters" {
     source_port_range          = "*"
     destination_port_range     = "80"
     destination_address_prefix = "*"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
   }
 
   security_rule {
@@ -90,7 +91,7 @@ resource "azurerm_network_security_group" "masters" {
     source_port_range          = "*"
     destination_port_range     = "443"
     destination_address_prefix = "*"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
   }
 
   security_rule {
@@ -102,7 +103,7 @@ resource "azurerm_network_security_group" "masters" {
     source_port_range          = "*"
     destination_port_range     = "8181"
     destination_address_prefix = "*"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
   }
 
   security_rule {
@@ -114,18 +115,28 @@ resource "azurerm_network_security_group" "masters" {
     source_port_range          = "*"
     destination_port_range     = "9090"
     destination_address_prefix = "*"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
   }
 
-  tags = "${merge(var.tags, map("Name", format(var.hostname_format, (count.index + 1), var.location, var.cluster_name),
-                                "Cluster", var.cluster_name))}"
+  tags = merge(
+    var.tags,
+    {
+      "Name" = format(
+        var.hostname_format,
+        count.index + 1,
+        var.location,
+        var.cluster_name,
+      )
+      "Cluster" = var.cluster_name
+    },
+  )
 }
 
 resource "azurerm_network_security_group" "public_agents" {
-  count               = "${var.num_public_agents == 0 ? 0 : 1}"
+  count               = var.num_public_agents == 0 ? 0 : 1
   name                = "dcos-${var.cluster_name}-public-agents"
-  location            = "${var.location}"
-  resource_group_name = "${var.resource_group_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "sshRule"
@@ -147,8 +158,8 @@ resource "azurerm_network_security_group" "public_agents" {
     protocol                     = "Tcp"
     source_port_range            = "*"
     destination_port_range       = "*"
-    source_address_prefixes      = ["${var.subnet_range}"]
-    destination_address_prefixes = ["${var.subnet_range}"]
+    source_address_prefixes      = [var.subnet_range]
+    destination_address_prefixes = [var.subnet_range]
   }
 
   security_rule {
@@ -171,7 +182,7 @@ resource "azurerm_network_security_group" "public_agents" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "80"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
     destination_address_prefix = "*"
   }
 
@@ -183,35 +194,45 @@ resource "azurerm_network_security_group" "public_agents" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "443"
-    source_address_prefixes    = ["${var.admin_ips}"]
+    source_address_prefixes    = var.admin_ips
     destination_address_prefix = "*"
   }
 
-  tags = "${merge(var.tags, map("Name", format(var.hostname_format, (count.index + 1), var.location, var.cluster_name),
-                                "Cluster", var.cluster_name))}"
+  tags = merge(
+    var.tags,
+    {
+      "Name" = format(
+        var.hostname_format,
+        count.index + 1,
+        var.location,
+        var.cluster_name,
+      )
+      "Cluster" = var.cluster_name
+    },
+  )
 }
 
 resource "azurerm_network_security_rule" "additional_rules" {
-  count                       = "${var.num_public_agents == 0 ? 0 : length(local.public_agents_additional_ports)}"
+  count                       = var.num_public_agents == 0 ? 0 : length(local.public_agents_additional_ports)
   name                        = "publicagentadditional${count.index}"
-  priority                    = "${150 + count.index}"
+  priority                    = 150 + count.index
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "${element(local.public_agents_additional_ports, count.index)}"
-  source_address_prefixes     = ["${var.public_agents_ips}"]
+  destination_port_range      = element(local.public_agents_additional_ports, count.index)
+  source_address_prefixes     = var.public_agents_ips
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name}"
-  network_security_group_name = "${azurerm_network_security_group.public_agents.name}"
-  depends_on                  = ["azurerm_network_security_group.public_agents"]
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.public_agents[0].name
+  depends_on                  = [azurerm_network_security_group.public_agents]
 }
 
 resource "azurerm_network_security_group" "private_agents" {
-  count               = "${var.num_private_agents == 0 ? 0 : 1}"
+  count               = var.num_private_agents == 0 ? 0 : 1
   name                = "dcos-${var.cluster_name}-private-agents"
-  location            = "${var.location}"
-  resource_group_name = "${var.resource_group_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "sshRule"
@@ -233,8 +254,8 @@ resource "azurerm_network_security_group" "private_agents" {
     protocol                     = "Tcp"
     source_port_range            = "*"
     destination_port_range       = "*"
-    source_address_prefixes      = ["${var.subnet_range}"]
-    destination_address_prefixes = ["${var.subnet_range}"]
+    source_address_prefixes      = [var.subnet_range]
+    destination_address_prefixes = [var.subnet_range]
   }
 
   security_rule {
@@ -275,15 +296,25 @@ resource "azurerm_network_security_group" "private_agents" {
     destination_address_prefix = "*"
   }
 
-  tags = "${merge(var.tags, map("Name", format(var.hostname_format, (count.index + 1), var.location, var.cluster_name),
-                                "Cluster", var.cluster_name))}"
+  tags = merge(
+    var.tags,
+    {
+      "Name" = format(
+        var.hostname_format,
+        count.index + 1,
+        var.location,
+        var.cluster_name,
+      )
+      "Cluster" = var.cluster_name
+    },
+  )
 }
 
 resource "azurerm_network_security_group" "bootstrap" {
-  count               = "${var.num_bootstrap == 0 ? 0 : 1}"
+  count               = var.num_bootstrap == 0 ? 0 : 1
   name                = "dcos-${var.cluster_name}-bootstrap"
-  location            = "${var.location}"
-  resource_group_name = "${var.resource_group_name}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "sshRule"
@@ -305,8 +336,8 @@ resource "azurerm_network_security_group" "bootstrap" {
     protocol                     = "Tcp"
     source_port_range            = "*"
     destination_port_range       = "*"
-    source_address_prefixes      = ["${var.subnet_range}"]
-    destination_address_prefixes = ["${var.subnet_range}"]
+    source_address_prefixes      = [var.subnet_range]
+    destination_address_prefixes = [var.subnet_range]
   }
 
   security_rule {
@@ -321,6 +352,17 @@ resource "azurerm_network_security_group" "bootstrap" {
     destination_address_prefix = "*"
   }
 
-  tags = "${merge(var.tags, map("Name", format(var.hostname_format, (count.index + 1), var.location, var.cluster_name),
-                                "Cluster", var.cluster_name))}"
+  tags = merge(
+    var.tags,
+    {
+      "Name" = format(
+        var.hostname_format,
+        count.index + 1,
+        var.location,
+        var.cluster_name,
+      )
+      "Cluster" = var.cluster_name
+    },
+  )
 }
+
