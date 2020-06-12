@@ -125,7 +125,6 @@ resource "azurerm_network_security_group" "masters" {
         var.hostname_format,
         count.index + 1,
         var.location,
-        var.cluster_name,
       )
       "Cluster" = var.cluster_name
     },
@@ -205,7 +204,6 @@ resource "azurerm_network_security_group" "public_agents" {
         var.hostname_format,
         count.index + 1,
         var.location,
-        var.cluster_name,
       )
       "Cluster" = var.cluster_name
     },
@@ -303,7 +301,6 @@ resource "azurerm_network_security_group" "private_agents" {
         var.hostname_format,
         count.index + 1,
         var.location,
-        var.cluster_name,
       )
       "Cluster" = var.cluster_name
     },
@@ -359,10 +356,8 @@ resource "azurerm_network_security_group" "bootstrap" {
         var.hostname_format,
         count.index + 1,
         var.location,
-        var.cluster_name,
       )
       "Cluster" = var.cluster_name
     },
   )
 }
-
